@@ -1,201 +1,319 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-gb" xml:lang="en-gb">
-  <head>
-		<title>Simple jQuery Carousel</title>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta http-equiv="content-language" content="en-gb" />
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <head>
+        <title>Simple jQuery Carousel</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js" type="text/javascript"></script>
         <script type="text/javascript">
+
+        (function( $ ){
             
-            $(window).load(function () {
-                carousel.init();
-            });
-            var carousel = {
-                // global properties
-                carouselLeader: 'm7_carousel',
-                fwdButton: 'next',
-                revButton: 'pre',
-                lockedClass: 'locked',
-                disabledClass: 'disabled',
-                itemOnClass: 'm7_itemOn',
+            var methods = {
+                init : function( options ) {
+                    // Create some defaults, extending them with any options that were provided
+                    var settings = $.extend( {
+                        'start'         : 1,                // carousel start slide
+                        'scrollDelay'   : 500,              // auto scroll delay, 0 = off
+                        'itemView'      : 2,                // porthole width
+                        'itemWidth'     : 200,              // carousel item width
+                        'itemHeight'    : 'auto',           // carousel item height
+                        'overlap'       : 100,              // offset carousel to see previous/next panel 50% itemWidth
+                        'fwdButton'     : 'fwd',            // carousel forward button text
+                        'revButton'     : 'rev',            // carousel reverse button text
+                        'navClass'      : 'carouselNav',    // carousel navigation class
+                        'itemOnClass'   : 'active'          // carousel navigation active item class
+                    }, options);
+                    
+                    return this.each(function(){
+                        
+                        var $this = $(this);
+                        $this.data('activeSlide', 0);
+                        $this.data('navPosition', 0);
+                        $this.data('coreLength', $this.children().length);
 
-                init: function () { // initalise the carousel
-                    "use strict";
-                    var myCarousel = $('.carousel');
-                    if (myCarousel) { //build carousel
-                        myCarousel.find('ul').each(function (i) {
-                            var carId = carousel.carouselLeader + '-' + i,
-                                navItems = carousel.buildNav($(this)),  //build carousel navigation
-                                thisCarousel = '',
-                                carNav = '';
+                        methods.buildCarousel($this, settings);
+                        if (settings.scrollDelay > 499 ) { $this.timer = setInterval(function () { methods.scroll($this, settings) }, settings.scrollDelay); };
+                    });
+                },
 
-                            $(this).wrap('<div id="' + carId + '" class="' + carousel.carouselLeader + '" />');
-                            thisCarousel = $('#' + carId);
-                            thisCarousel.append('<ol class="' + carousel.carouselLeader
-                                + 'Nav"><li rel="rev"><a id="'
-                                + carousel.revButton + '" class="'
-                                + carousel.disabledClass + '" href="#">previous</a></li>' + navItems
-                                + '<li rel="fwd"><a id="' + carousel.fwdButton
-                                + '" href="#">next</a></li></ol>');
-                            carNav = thisCarousel.find('ol');
-                            carousel.setWidth(thisCarousel);
-                            carousel.moveCarousel(thisCarousel, carNav);
+                buildCarousel : function($this, settings) {
+                    $this.css({
+                        'width': settings.itemWidth * settings.length,
+                        'height': settings.itemHeight,
+                        'position': 'relative',
+                        'margin-left': settings.overlap
+                    });
+                    $this.wrap('<div>');
+                    $this.parent().css({
+                        'width': settings.itemWidth * settings.itemView,
+                        'height': settings.itemHeight,
+                        'border': 'solid 2px red',
+                        'position': 'relative',
+                        'margin': '0 auto',
+                        'overflow': 'hidden'
+                    });
+                    this.buildNav($this, settings);
+                },
+
+                buildNav : function($this, settings) {
+                    var fwd, rev, navWidth = 4,
+                        list = $("<ol/>", {
+                            'class': settings.navClass
+                        }).appendTo($this.parent());
+
+                    // add jump links
+                    $this.children().each(function (i) {
+                        var item, active = '';
+
+                        if(i === (settings.start -1)) {
+                            active = settings.itemOnClass;
+                            $this.data("navPosition", settings.start -1);
+                        }
+
+                        $(this).attr('rel', i).css({
+                            'width' : settings.itemWidth,
+                            'height' : settings.itemHeight
                         });
-                    }
-                },
-                moveCarousel: function (thisCarousel, carNav) { // bind click event - single itteration to next slide
-                    "use strict";
-                    var carousleButton = carNav.find('li');
-                    carousleButton.bind('click.moveCarousel', function (e) {
-                        e.preventDefault();
-                        var clickedTest = $(this).attr('rel'),
-                            reg = new RegExp('^[0-9]$'),
-                            clicked = reg.test(clickedTest) && (clickedTest || 1),
-                            locked = $(this).hasClass(carousel.lockedClass),
-                            position = carousel.getNavPosition(carNav);
 
-                        if (reg.test(clickedTest)) { // if jump number
-                            if (clicked > position && locked !== true) {
-                                carousel.animate(thisCarousel, carNav, clicked, true, true);
-                            } else if (clicked < position) {
-                                carousel.animate(thisCarousel, carNav, clicked, false, true);
-                            }
-                        } else {
-                            if (clickedTest === 'fwd') { // if fwd
-                                if (carousel.getNavPosition(carNav) !== carousel.getNavLength(carNav) - 1 && locked !== true) {
-                                    carousel.animate(thisCarousel, carNav, clicked, true, false);
-                                }
-                            } else { // if rev
-                                if (carousel.getNavPosition(carNav) > 0 && locked !== true) {
-                                    carousel.animate(thisCarousel, carNav, clicked, false, false);
-                                }
-                            }
-                        }
+                        item = $("<li/>", {
+                            rel: i,
+                            'class':active
+                        }).appendTo(list);
+
+                        $("<a/>", {
+                            text: (i + 1),
+                            href: '#',
+                            rel: i,
+                            click: function (e) { this.jump(e, $this, $(this), settings); }
+                        }).appendTo(item);
                     });
-                },
-                animate: function (thisCarousel, carNav, clicked, fwd, jump) { // calculate the movment values and directions then animate the carousel
-                    "use strict";
-                    carNav.find('li').addClass(carousel.lockedClass);
-                    var carouselItems = thisCarousel.find('ul'),
-                        itemWidth = parseInt(carouselItems.find('li').width(), 10),
-                        position = carousel.getNavPosition(carNav);
 
-                    if (!jump) { // itterate switch
-                        if (!fwd) { // itterate rev
-                            position = position - 1;
-                            itemWidth = '+=' + '+' + itemWidth;
-                        } else { // itterate fwd
-                            position = position + 1;
-                            itemWidth = '+=' + '-' + itemWidth;
-                        }
-                    } else { // jump
-                        position = clicked;
-                        itemWidth = '-' + parseInt((itemWidth * clicked), 10);
-                    }
-                    carouselItems.animate({ // animate 
-                        'left': itemWidth
-                    }, 250, function () { //callback
-                        carousel.setNavPosition(carNav, position);
+                    // shuffle forward link
+                    fwd = $("<li/>", {
+                        rel: 'fwd'
+                    }).appendTo(list);
+                    
+                    $("<a/>", {
+                        text: settings.fwdButton,
+                        href: '#',
+                        rel: 'fwd',
+                        click: function (e) { this.itterate(e, $this, $(this), settings); }
+                    }).appendTo(fwd);
+
+                    // shuffle back link
+                    rev = $("<li/>", {
+                        rel: 'rev'
+                    }).prependTo(list);
+                    
+                    $("<a/>", {
+                        text: settings.revButton,
+                        href: '#',
+                        rel: 'rev',
+                        click: function (e) { this.itterate(e, $this, $(this), settings); }
+                    }).appendTo(rev);
+
+                    list.children().each(function () {
+                        navWidth += $(this).width();
                     });
+                    list.css({
+                        'width': navWidth
+                    });
+                    this.prepareCarousel($this, settings);
                 },
-                getNavLength: function (carNav) { // return the navigation length - ignore the #fwd and #back buttons
-                    "use strict";
-                    return parseInt((carNav.find('li').length - 2), 10);
-                },
-                getNavPosition: function (carNav) { // return the carousel position - only the nav is marked
-                    "use strict";
-                    return parseInt(carNav.find('.' + carousel.itemOnClass).attr('rel'), 10);
-                },
-                setNavPosition: function (carNav, position) { // set the navigation position and add/remove disabled class to useless buttons
-                    "use strict";
-                    carNav.find('.' + carousel.itemOnClass).removeClass(carousel.itemOnClass);
-                    carNav.find('li[rel="' + position + '"]').addClass(carousel.itemOnClass);
-                    carNav.find('li').removeClass(carousel.lockedClass);
+                prepareCarousel : function ($this, settings) {
+                    var $items = $this.children(),
+                        pre = $items.clone().removeAttr('rel').addClass('clone'),
+                        post = $items.clone().removeAttr('rel').addClass('clone');
 
-                    var revButton = carNav.find('#' + carousel.revButton),
-                        fwdButton = carNav.find('#' + carousel.fwdButton),
-                        navPosition = carousel.getNavPosition(carNav);
-                    if (navPosition === 0) {
-                        revButton.addClass(carousel.disabledClass);
+                    $this.append(pre);
+                    $this.prepend(post);
+                    
+                    $this.css('width', ($this.children().length * settings.itemWidth));
+                    
+                    $this.data('activeSlide', (settings.start - 1) + $this.data('coreLength'));
+                    
+                    this.moveCarousel($this, settings,  $this.data('activeSlide'), $this.data("navPosition"));
+                },
+                position : function ($this, settings) {
+                    position = $this.data('activeSlide');
+                    coreLength = $this.data("coreLength");
+                    
+                    // move forward reset
+                    if (position > ($this.children().length - coreLength) - 1) {
+                        position = coreLength;
+                        $this.children().css('left', -(position - 1) * settings.itemWidth);
+                        $this.data('activeSlide', position );
+                    }
+                    // move back reset
+                    if (position < coreLength) {
+                       position = position + coreLength;
+                       $this.children().css('left', -(position + 1) * settings.itemWidth);
+                       $this.data('activeSlide', position);
+                    }
+                    
+                    // scroll into position
+                    var v = -settings.itemWidth * position;
+                    $this.children().animate({
+                        'left': v
+                    }).css('position', 'relative');
+                },
+
+                setNav: function ($this, settings) {
+                    var navPosition = $this.data("navPosition");
+                    if (navPosition < 0) {
+                        navPosition = $this.data('coreLength') -1 ;
+                        $this.data('navPosition', navPosition);
+                    }
+                    if (navPosition > $this.data('coreLength') - 1) {
+                        navPosition = 0;
+                        $this.data('navPosition', 0);
+                    }
+
+                    $this.parent().find('ol li').removeClass(settings.itemOnClass);
+                    $this.parent()
+                        .find('ol li[rel="' + navPosition + '"]')
+                        .addClass(settings.itemOnClass);
+                },
+
+                itterate: function (event, $this, clicked, settings) {
+                    event.preventDefault();
+                    methods.scrollStop($this.timer);
+                    
+                    // calculate move direction
+                    var navPosition = $this.data('navPosition'),
+                        activeSlide = $this.data('activeSlide');
+                    if (clicked.attr('rel') === 'fwd') {
+                        this.moveCarousel($this, settings,  activeSlide + 1, navPosition + 1);
                     } else {
-                        revButton.removeClass(carousel.disabledClass);
+                        this.moveCarousel($this, settings,  activeSlide - 1, navPosition - 1);
                     }
-                    if (navPosition === carousel.getNavLength(carNav) - 1) {
-                        fwdButton.addClass(carousel.disabledClass);
-                    } else {
-                        fwdButton.removeClass(carousel.disabledClass);
-                    }
+                    this.position($this, settings);
+                    this.setNav($this, settings);
                 },
-                setWidth: function (thisCarousel) { // set the carousel width based on the css width set and number of li elements
-                    "use strict";
-                    var carouselContainer = thisCarousel.find('ul'),
-                        carouselItems = carouselContainer.find('li');
+                
+                jump: function (event, $this, clicked, settings) {
+                    event.preventDefault();
+                    methods.scrollStop($this.timer);
 
-                    carouselContainer.width(carouselItems.length * carouselItems.outerWidth());
+                    // calculate jump direction
+                    var target = parseInt(clicked.attr('rel'), 10) + $this.data('coreLength'),
+                        activeSlide = $this.data('activeSlide');
+                    if (activeSlide !== target) {
+                        this.moveCarousel($this, settings,  target, (target - $this.data('coreLength')));
+                    }
                 },
-                buildNav: function (thisCarousel) { // build the carousel navigation items
-                    "use strict";
-                    var item = '',
-                        activeSlide = '';
-                    thisCarousel.find('li').each(function (i) {
-                        if (i === (0)) {
-                            activeSlide = carousel.itemOnClass;
-                        } else {
-                            activeSlide = '';
-                        }
-                        item += '<li rel="' + i + '" class="' + activeSlide + '"><a href="#" >' + i + '</a></li>';
-                    });
-                    return item;
+
+                moveCarousel: function ($this, settings, activeSlide ,navPosition){
+                    $this.data('activeSlide', activeSlide);
+                    $this.data('navPosition', navPosition);
+                    this.position($this, settings);
+                    this.setNav($this, settings);
+                },
+
+                scroll: function ($this, settings) {
+                    this.moveCarousel($this, settings,  $this.data('activeSlide') + 1, $this.data('navPosition') + 1);
+                },
+                
+                scrollStop: function (timer) {
+                    // to be called when you want to stop the carousel
+                    clearInterval(timer);
                 }
             };
+
+            $.fn.carousel = function( method ) { 
+                // Method calling logic
+                if (methods[method]) {
+                    return methods[method].apply( this, Array.prototype.slice.call(arguments, 1 ));
+                } else if ( typeof method === 'object' || ! method ) {
+                    return methods.init.apply( this, arguments);
+                } else {
+                    $.error( 'Method ' +  method + ' does not exist on jQuery.carousel' );
+                } 
+            };
+        })( jQuery );
+
+        </script>
+        <script type="text/javascript">
+            $(window).load(function () {
+                $('.carousel').carousel({ 
+                    'scrollDelay'     : 5000
+                });
+            });
         </script>
         <style type="text/css">
-			ol, ul {
+            ol, ul {
                 list-style: none;
                 margin: 0;
                 padding: 0;
             }
-			.m7_carousel {
-                height:280px;
-                width:294px;
-                overflow:hidden;
-                position:relative;
-            }
-            .m7_carousel img {
-                height:253px;
-                width:294px;
-            }
-            .m7_carousel ul{
+            .carousel ul{
                 overflow:hidden;
                 position:absolute;
             }
-            .m7_carousel ul li,
-            .m7_carouselNav li{
+            .carousel li:nth-child(even) {
+                background-color: #ccc;
+            }
+            .carousel li h1 {
+                text-align: center;
+            }
+
+            .carouselNav {
+                overflow:hidden;
+            }
+            .carousel li,
+            .carouselNav li{
                 float:left;
             }
-            .m7_carouselNav{
-                position:absolute;
-                bottom:0;
+            .carouselNav{
+                margin:0 auto;
             }
-            .m7_itemOn{
+            .active{
                 border:solid 1px red;
             }
-            #contentWrapper .m7_carouselNav a {
+            .carouselNav a {
                 background: none;
                 margin:0;
-                padding:0;
+                padding:5px;
             }
-		</style>
-	</head>
-	<body>
-		<h1>Simple jQurey Carousel</h1>
-        <div class="carousel">
-            <ul>
-                <li><img src="http://farm4.static.flickr.com/3513/5835858015_2339a3582e.jpg" alt="image of stuff" /></li>
-                <li><img src="http://farm3.static.flickr.com/2484/3931021148_f21883424a.jpg" alt="image of stuff" /></li>
-                <li><img src="http://farm7.static.flickr.com/6131/5980825500_729949bed6.jpg" alt="image of stuff" /></li>
-                <li><img src="http://farm4.static.flickr.com/3200/5834284532_21c8d98419.jpg" alt="image of stuff" /></li>
+        </style>
+    </head>
+    <body>
+        <h1>infinate jQurey Carousel</h1>
+        <article>
+            <ul class="carousel">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+                <li><h1>Slide 9</h1></li>
+                <li><h1>Slide 10</h1></li>
             </ul>
-        </div>
-	</body>
+        </article>
+        <article>
+            <ul class="carousel">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+            </ul>
+        </article>
+        <article>
+            <ul class="carousel">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+            </ul>
+        </article>
+    </body>
 </html>
