@@ -1,4 +1,6 @@
-Battle of the carousels mootools  v jQuery 
+Battle of the carousels mootools  v jQuery
+
+says simple on the tin...
 
 A duel with no victors however the mootools carousel (mootools.html) has an issue, 
 the clone() process reversed the first part of the infinite carousel, this is 
