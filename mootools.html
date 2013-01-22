@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-gb" xml:lang="en-gb">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <script type="text/javascript" src="js/moo.1.4.5/core.js"></script>
+        <script type="text/javascript">
+
+            infinateCarousel = new Class({
+                Implements: [Events, Options],
+                Binds: [],
+                options: {
+                    carousel      : '.myCarousel',       // carousel ID
+                    infinate      : false,            // endless carousel?
+                    start         : 1,                // carousel start slide
+                    scrollDelay   : 500,              // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    itemView      : 2,                // porthole width
+                    itemWidth     : 200,              // carousel item width
+                    itemHeight    : 'auto',           // carousel item height
+                    overlap       : 100,              // offset carousel to see previous/next panel 50% itemWidth
+                    fwdButton     : 'fwd',            // carousel forward button text
+                    revButton     : 'rev',            // carousel reverse button text
+                    disabledClass : 'disabled',       // disabled element class
+                    navClass      : 'carouselNav',    // carousel navigation class
+                    itemOnClass   : 'active',         // carousel navigation active item class
+                },
+
+                /***  build carousel and navigation elements  ***/
+                /************************************************/
+                initialize: function (options) {
+                    
+                    // set options
+                    this.setOptions(options);
+                    this.carousels = $$('.' + this.options.carousel);
+                    if(this.carousels) {
+                        this.carousels.each( function (carousel, index){
+                            this.carousel = carousel;
+                            this.carousel.set('id', this.options.carousel + '_' + index);
+                            this.carousel.model = {
+                                'autoScroll' : false,
+                                'activeSlide' : 0,
+                                'navPosition' : 0,
+                                'coreLength' : 0
+                            };
+
+                            //this.myFx = new Fx.Morph(this.carousel, { duration: 500, transition: Fx.Transitions.Sine.easeIn });
+                            this.myFx = new Fx.Morph(this.carousel, { duration: 500, transition: Fx.Transitions.Quint.easeOut });
+                            
+                            if (this.options.scrollDelay > 499 ) {  this.carousel.model.autoScroll = true; this.options.infinate = true };
+                        
+                            if(this.options.infinate === true) {
+                                this.carousel.model.coreLength = this.carousel.getChildren().length;
+                            } else {
+                                this.carousel.model.coreLength = 0;
+                            }
+                            this.buildCarousel();
+                        } .bind(this))
+                    }
+                   
+                },
+
+                buildCarousel: function () {
+                    var myWrapper;
+
+                    this.carousel.setStyles({
+                        'width': this.options.itemWidth * this.options.length,
+                        'height': this.options.itemHeight,
+                        'position': 'relative',
+                        'margin-left': this.options.overlap
+                    });
+                    this.myWrapper = new Element('div').wraps(this.carousel)
+                    this.myWrapper.setStyles({
+                        'width': this.options.itemWidth * this.options.itemView,
+                        'height': this.options.itemHeight,
+                        'position': 'relative',
+                        'overflow': 'hidden'
+                    });
+
+                    this.buildNav();
+                },
+
+                buildNav : function() {
+                    var fwd, rev,
+                        navWidth = 4,
+                        list = new Element('ol.' + this.options.navClass);
+                        
+
+                    this.myWrapper.grab(list,'bottom');
+
+                    // add jump links
+                    this.carousel.getChildren().each(function (el, i) {
+                        var item = new Element('li'),
+                            link = new Element('a').set({
+                                text: (i + 1),
+                                href: '#',
+                                rel: i
+                            });
+
+                        if(i === (this.options.start -1)) {
+                            this.carousel.model.navPosition = i;
+                        }
+
+                        el.set('rel', i).setStyles({
+                            'width' : this.options.itemWidth,
+                            'height' : this.options.itemHeight
+                        });
+
+                        list.grab(item.set('rel', i));
+                        item.grab(link.addEvent('click', function(e){ this.jump(e); } .bind(this)));
+                    } .bind(this));
+
+                    fwd = new Element('li').set({
+                        rel: 'fwd'
+                    }).grab( new Element('a').set({
+                        text: this.options.fwdButton,
+                        href: '#',
+                        rel: 'fwd'
+                    }).addEvent('click', function(e){ this.itterate(e)} .bind(this)));
+
+                    rev = new Element('li').set({
+                        rel: 'rev'
+                    }).grab( new Element('a').set({
+                        text: this.options.revButton,
+                        href: '#',
+                        rel: 'rev'
+                    }).addEvent('click', function(e){ this.itterate(e)} .bind(this)));
+
+                    list.grab(rev, 'top');
+                    list.grab(fwd, 'bottom');
+
+                    list.getChildren().each(function (el, i) {
+                        var size = el.getSize()
+                        navWidth += size.x;
+                    });
+
+                    list.setStyles({
+                        'width': navWidth
+                    });
+
+                    this.prepareCarousel();
+                },
+
+                prepareCarousel : function() {
+                    if(this.options.infinate) {
+                        
+                         if(this.options.infinate) {
+                            this.carousel.getChildren().each( function (el, i)  { 
+                                el.clone(true, false).removeProperty('rel').addClass('clone').inject(this.carousel.get('id'), 'top');
+                                el.clone(true, false).removeProperty('rel').addClass('clone').inject(this.carousel.get('id'), 'bottom');
+                            } .bind(this)) ;
+                        }
+
+                    }
+                    this.carousel.setStyle('width', (this.carousel.getChildren().length * this.options.itemWidth));
+
+                    if (this.carousel.model.autoScroll) {
+                        this.scrollStart();
+                    };
+                    this.moveCarousel((this.options.start - 1) + this.carousel.model.coreLength, this.carousel.model.navPosition);
+                },
+
+                /***  move carousel  ***/
+                /***********************/
+                itterate: function (event) {
+                    var clicked = event.target;
+                    if(clicked.hasClass(this.options.disabledClass)) { return }
+                    event.preventDefault();
+                    this.scrollStop();
+                    
+                    // calculate move direction
+                    var navPosition = this.carousel.model.navPosition,
+                        activeSlide = this.carousel.model.activeSlide;
+                    if (clicked.get('rel') === 'fwd') {
+                        this.moveCarousel(activeSlide + 1, navPosition + 1);
+                    } else {
+                        this.moveCarousel( activeSlide - 1, navPosition - 1);
+                    }
+                },
+
+                jump: function (event) {
+                    var clicked = event.target.getParent();
+                    event.preventDefault();
+                    this.scrollStop();
+
+                    // calculate jump direction
+                    var target = parseInt(clicked.get('rel'), 10) + this.carousel.model.coreLength,
+                        activeSlide = this.carousel.model.activeSlide;
+                    if (activeSlide !== target) {
+                        this.moveCarousel( target, (target - this.carousel.model.coreLength ));
+                    }
+                },
+
+                  moveCarousel: function (activeSlide, navPosition) {
+                    this.carousel.model.activeSlide = activeSlide;
+                    this.carousel.model.navPosition = navPosition;
+                    this.position();
+                },
+
+                position : function () {
+                    var position = this.carousel.model.activeSlide,
+                        coreLength = this.carousel.model.coreLength;
+                    // move forward reset
+                    if (position > (this.carousel.getChildren().length - coreLength) - 1) {
+                        position = coreLength;
+                        this.carousel.setStyles({'left' : -(position - 1) * this.options.itemWidth, 'position' : 'relative'});
+                        this.carousel.model.activeSlide = position ;
+                    }
+                    // move back reset
+                    if (position < coreLength) {
+                       position = position + coreLength;
+                       this.carousel.setStyles({'left' : -(position + 1) * this.options.itemWidth, 'position' : 'relative'});
+                       this.carousel.model.activeSlide = position;
+                    }
+                    
+                    // scroll into position
+                    var move = -(this.options.itemWidth * position);
+                    this.myFx.start({
+                        'left': move
+                    });
+
+                    this.setNav();
+                },
+
+                /***  carousel navigation  ***/
+                /*****************************/
+                setNav: function () {
+                    if(this.options.infinate === true) {
+                        this.loopNav();
+                    } else {
+                        this.lockNav();
+                    }
+                },
+                
+                loopNav : function () {
+                    var navPosition = this.carousel.model.navPosition,
+                        coreLength = this.carousel.model.coreLength;
+
+                    // move forward reset
+                    if (navPosition > coreLength -1) {
+                        navPosition = 0;
+                    }
+                    // move back reset
+                    if (navPosition < 0) {
+                        navPosition = coreLength -1;
+                    }
+                    this.carousel.model.navPosition = navPosition;
+                    this.styleNav();
+                },
+
+                lockNav : function () {
+                    var navPosition = this.carousel.model.navPosition,
+                        parent = this.carousel.getParent();
+                    parent.getChildren('ol li a.' + this.options.disabledClass ).removeClass(this.options.disabledClass);
+
+                    // move forward lock
+                    if (navPosition >= this.carousel.getChildren().length - 1) {
+                        parent.getChildren('ol li a[rel="' + this.options.fwdButton + '"]')
+                            .addClass(this.options.disabledClass);
+                    }
+                    // move back lock
+                    if (navPosition <= 0) {
+                        parent.getChildren('ol li a[rel="' + this.options.revButton + '"]')
+                            .addClass(this.options.disabledClass);
+                    }
+
+                    this.styleNav ();
+                },
+
+                styleNav : function () {
+                    var parent = this.carousel.getParent();
+                    parent.getChildren('ol li').removeClass(this.options.itemOnClass);
+                    parent
+                        .getChildren('ol li[rel="' + this.carousel.model.navPosition + '"]')
+                        .addClass(this.options.itemOnClass);
+                },
+
+                /***  auto scroll carousel  ***/
+                /******************************/
+                scrollStart : function () {
+                    this.periodicalID = (function() {
+                        this.moveCarousel(this.carousel.model.activeSlide + 1, this.carousel.model.navPosition + 1);
+                    } .bind(this)).periodical(this.options.scrollDelay);
+                },
+                
+                scrollStop : function () {
+                    // to be called when you want to stop the carousel
+                    $clear(this.periodicalID);
+                }
+                
+            });
+        </script>
+
+        <script type="text/javascript">
+            window.addEvent('domready', function () {
+                
+                if ($$('endlessScroll')) {
+
+                    endlessScroll = new infinateCarousel({
+                        carousel      : 'endlessScroll',       // carousel class
+                        infinate      : true,                   // endless carousel?
+                        start         : 1,                      // carousel start slide
+                        scrollDelay   : 3000                    // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+
+                 if ($$('endless')) {
+
+                    endlessScroll = new infinateCarousel({
+                        carousel      : 'endless',       // carousel class
+                        infinate      : true,                   // endless carousel?
+                        start         : 2,                      // carousel start slide
+                        scrollDelay   : 0                    // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+                
+                if ($$('linearScroll')) {
+
+                    linear = new infinateCarousel({
+                        carousel      : 'linearScroll',              // carousel class
+                        infinate      : false,                  // endless carousel?
+                        start         : 3,                      // carousel start slide
+                        scrollDelay   : 6000                       // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+
+                if ($$('linear')) {
+
+                    linear = new infinateCarousel({
+                        carousel      : 'linear',              // carousel class
+                        infinate      : false,                  // endless carousel?
+                        start         : 4,                      // carousel start slide
+                        scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+            });
+        </script>
+        <style type="text/css">
+            article > div { 
+                overflow:hidden;
+                border:solid 1px #000;
+                margin:0 auto 30px;
+            }
+            article > h2 {
+                text-align: center;
+            }
+            ol, ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            .carousel ul{
+                overflow:hidden;
+                position:absolute;
+            }
+            .carousel li:nth-child(even) {
+                background-color: #ccc;
+            }
+            .carousel li h1 {
+                text-align: center;
+            }
+            .carouselNav {
+                overflow:hidden;
+            }
+            .carousel li,
+            .carouselNav li{
+                float:left;
+            }
+            .carouselNav{
+                margin:0 auto;
+            }
+            .active{
+                border:solid 1px red;
+            }
+            .carouselNav a {
+                background: none;
+                margin:0;
+                padding:5px;
+            }
+        </style>
+</head>
+<body>
+    <h1>infinate MooTools Carousel</h1>
+        <article>
+            <h2>Endless Carousel - with auto scroll</h2>
+            <ul class="carousel endlessScroll">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <!-- li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+                <li><h1>Slide 9</h1></li>
+                <li><h1>Slide 10</h1></li -->
+            </ul>
+        </article>
+        <article>
+            <h2>Endless Carousel - with manual scroll</h2>
+            <ul class="carousel endless">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+            </ul>
+        </article>
+        <article>
+            <h2>Linear Carousel - with auto scroll (made endless)</h2>
+            <ul class="carousel linearScroll">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+            </ul>
+        </article>
+        <article>
+            <h2>Linear Carousel</h2>
+            <ul class="carousel linear">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+            </ul>
+        </article>
+</body>
+</html>
