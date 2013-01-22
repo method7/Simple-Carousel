@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-gb" xml:lang="en-gb">
+    <head>
+        <title>Simple jQuery Carousel</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+
+        (function( $ ){
+            
+            var methods = {
+                
+                /***  build carousel and navigation elements  ***/
+                /************************************************/
+                init : function( options ) {
+                    // Create some defaults, extending them with any options that were provided
+                    var settings = $.extend( {
+                        'infinate'      : false,            // endless carousel?
+                        'start'         : 1,                // carousel start slide
+                        'scrollDelay'   : 500,              // auto scroll delay, < 500 = off >= 500 sets infinate true
+                        'itemView'      : 2,                // porthole width
+                        'itemWidth'     : 200,              // carousel item width
+                        'itemHeight'    : 'auto',           // carousel item height
+                        'overlap'       : 100,              // offset carousel to see previous/next panel 50% itemWidth
+                        'fwdButton'     : 'fwd',            // carousel forward button text
+                        'revButton'     : 'rev',            // carousel reverse button text
+                        'disabledClass' : 'disabled',       // disabled element class
+                        'navClass'      : 'carouselNav',    // carousel navigation class
+                        'itemOnClass'   : 'active',         // carousel navigation active item class
+                    }, options);
+                    
+                    return this.each(function(){
+                        
+                        var $this = $(this);
+                        $this.model = {
+                                'autoScroll' : false,
+                                'activeSlide' : 0,
+                                'navPosition' : 0,
+                                'coreLength' : 0
+                            };
+                        $this.model.activeSlide = 0;
+                        $this.model.autoScroll = false;
+                        if (settings.scrollDelay > 499 ) { $this.model.autoScroll = true; settings.infinate = true };
+                        
+                        if(settings.infinate === true) {
+                            $this.model.coreLength = $this.children().length;
+                        } else {
+                            $this.model.coreLength = 0;
+                        }
+
+                        methods.buildCarousel($this, settings);
+                    });
+                },
+
+                buildCarousel : function($this, settings) {
+                    $this.css({
+                        'width': settings.itemWidth * settings.length,
+                        'height': settings.itemHeight,
+                        'position': 'relative',
+                        'margin-left': settings.overlap
+                    });
+                    $this.wrap('<div>');
+                    $this.parent().css({
+                        'width': settings.itemWidth * settings.itemView,
+                        'height': settings.itemHeight,
+                        'position': 'relative',
+                        'overflow': 'hidden'
+                    });
+                    this.buildNav($this, settings);
+                },
+
+                buildNav : function($this, settings) {
+                    var fwd, rev, navWidth = 4,
+                        list = $("<ol/>", {
+                            'class': settings.navClass
+                        }).appendTo($this.parent());
+
+                    // add jump links
+                    $this.children().each(function (i) {
+                        var item;
+
+                        if(i === (settings.start -1)) {
+                            $this.model.navPosition = settings.start -1;
+                        }
+
+                        $(this).attr('rel', i).css({
+                            'width' : settings.itemWidth,
+                            'height' : settings.itemHeight
+                        });
+
+                        item = $("<li/>", {
+                            rel: i
+                        }).appendTo(list);
+
+                        $("<a/>", {
+                            text: (i + 1),
+                            href: '#',
+                            rel: i,
+                            click: function (e) { methods.jump(e, $this, $(this), settings); }
+                        }).appendTo(item);
+                    });
+
+                    // shuffle forward link
+                    fwd = $("<li/>", {
+                        rel: 'fwd'
+                    }).appendTo(list);
+                    
+                    $("<a/>", {
+                        text: settings.fwdButton,
+                        href: '#',
+                        rel: 'fwd',
+                        click: function (e) { methods.itterate(e, $this, $(this), settings); }
+                    }).appendTo(fwd);
+
+                    // shuffle back link
+                    rev = $("<li/>", {
+                        rel: 'rev'
+                    }).prependTo(list);
+                    
+                    $("<a/>", {
+                        text: settings.revButton,
+                        href: '#',
+                        rel: 'rev',
+                        click: function (e) { methods.itterate(e, $this, $(this), settings); }
+                    }).appendTo(rev);
+
+                    list.children().each(function () {
+                        navWidth += $(this).width();
+                    });
+
+                    list.css({
+                        'width': navWidth
+                    });
+
+                    this.prepareCarousel($this, settings);
+                },
+
+                prepareCarousel : function ($this, settings) {
+                    if(settings.infinate) {
+                        var $items = $this.children(),
+                            pre = $items.clone().removeAttr('rel').addClass('clone'),
+                            post = $items.clone().removeAttr('rel').addClass('clone');
+
+                        $this.append(pre);
+                        $this.prepend(post);
+                    }
+                    $this.css({'width' : ($this.children().length * settings.itemWidth), 'position' : 'relative'});
+
+                    if ($this.model.autoScroll) {
+                        $this.timer = setInterval(function () { methods.scroll($this, settings) }, settings.scrollDelay);
+                    };
+                    this.moveCarousel($this, settings,  (settings.start - 1) + $this.model.coreLength, $this.model.navPosition);
+                },
+
+                /***  move carousel  ***/
+                /***********************/
+                itterate: function (event, $this, clicked, settings) {
+                    if(clicked.hasClass(settings.disabledClass)) { return }
+                    event.preventDefault();
+                    this.scrollStop($this.timer);
+                    
+                    // calculate move direction
+                    var navPosition = $this.model.navPosition,
+                        activeSlide = $this.model.activeSlide;
+                    if (clicked.attr('rel') === 'fwd') {
+                        this.moveCarousel($this, settings,  activeSlide + 1, navPosition + 1);
+                    } else {
+                        this.moveCarousel($this, settings,  activeSlide - 1, navPosition - 1);
+                    }
+                },
+                
+                jump: function (event, $this, clicked, settings) {
+                    event.preventDefault();
+                    this.scrollStop($this.timer);
+
+                    // calculate jump direction
+                    var target = parseInt(clicked.attr('rel'), 10) + $this.model.coreLength,
+                        activeSlide = $this.model.activeSlide;
+                    if (activeSlide !== target) {
+                        this.moveCarousel($this, settings,  target, (target - $this.model.coreLength));
+                    }
+                },
+
+                moveCarousel: function ($this, settings,  activeSlide, navPosition) {
+                    $this.model.activeSlide = activeSlide;
+                    $this.model.navPosition = navPosition;
+                    this.position($this, settings);
+                },
+                
+                position : function ($this, settings) {
+                    position = $this.model.activeSlide;
+                    coreLength = $this.data("coreLength");
+                    // move forward reset
+                    if (position > ($this.children().length - coreLength) - 1) {
+                        position = coreLength;
+                        $this.css('left', -(position - 1) * settings.itemWidth);
+                        $this.model.activeSlide = position;
+                    }
+                    // move back reset
+                    if (position < coreLength) {
+                       position = position + coreLength;
+                       $this.css('left', -(position + 1) * settings.itemWidth);
+                       $this.model.activeSlide = position;
+                    }
+                    
+                    // scroll into position
+                    var move = -(settings.itemWidth * position);
+                    $this.animate({
+                        'left': move
+                    });
+
+                    this.setNav($this, settings);
+                },
+
+                /***  carousel navigation  ***/
+                /*****************************/
+                setNav: function ($this, settings) {
+                    if(settings.infinate === true) {
+                        this.loopNav($this, settings);
+                    } else {
+                        this.lockNav($this, settings);
+                    }
+                },
+                
+                loopNav : function ($this, settings) {
+                    var navPosition = $this.model.navPosition,
+                        coreLength = $this.data("coreLength");
+
+                    // move forward reset
+                    if (navPosition > coreLength -1) {
+                        navPosition = 0;
+                    }
+                    // move back reset
+                    if (navPosition < 0) {
+                        navPosition = coreLength -1;
+                    }
+                    $this.model.navPosition = navPosition;
+                    this.styleNav ($this, settings, navPosition);
+                },
+
+                lockNav : function ($this, settings, navPosition) {
+                    var navPosition = $this.model.navPosition,
+                        $parent = $this.parent();
+                    $parent.find('ol li a.' + settings.disabledClass ).removeClass(settings.disabledClass);
+
+                    // move forward lock
+                    if (navPosition >= $this.children().length - 1) {
+                        $parent.find('ol li a[rel="' + settings.fwdButton + '"]')
+                            .addClass(settings.disabledClass);
+                    }
+                    // move back lock
+                    if (navPosition <= 0) {
+                        $parent.find('ol li a[rel="' + settings.revButton + '"]')
+                            .addClass(settings.disabledClass);
+                    }
+
+                    this.styleNav ($this, settings, navPosition);
+                },
+
+                styleNav : function ($this, settings, navPosition) {
+                    var $parent = $this.parent();
+                    $parent.find('ol li').removeClass(settings.itemOnClass);
+                    $parent
+                        .find('ol li[rel="' + navPosition + '"]')
+                        .addClass(settings.itemOnClass);
+                },
+
+                /***  auto scroll carousel  ***/
+                /******************************/
+                scroll: function ($this, settings) {
+                    this.moveCarousel($this, settings,  $this.model.activeSlide + 1, $this.model.navPosition + 1);
+                },
+                
+                scrollStop: function (timer) {
+                    // to be called when you want to stop the carousel
+                    clearInterval(timer);
+                }
+            };
+
+            $.fn.carousel = function( method ) { 
+                // Method calling logic
+                if (methods[method]) {
+                    return methods[method].apply( this, Array.prototype.slice.call(arguments, 1 ));
+                } else if ( typeof method === 'object' || ! method ) {
+                    return methods.init.apply( this, arguments);
+                } else {
+                    $.error( 'Method ' +  method + ' does not exist on jQuery.carousel' );
+                } 
+            };
+        })( jQuery );
+
+        </script>
+        <script type="text/javascript">
+            $(window).load(function () {
+                
+                $('.endlessScroll').carousel({ 
+                    'infinate'      : true,             // endless carousel?
+                    'start'         : 1,                // carousel start slide
+                    'scrollDelay'   : 3000              // auto scroll delay, < 500 = off >= 500 sets infinate true
+                });
+
+                $('.endless').carousel({ 
+                    'infinate'      : true,             // endless carousel?
+                    'start'         : 2,                // carousel start slide
+                    'scrollDelay'   : 0                 // auto scroll delay, < 500 = off >= 500 sets infinate true
+                });
+
+                $('.linearScroll').carousel({ 
+                    'infinate'      : false,             // endless carousel?
+                    'start'         : 3,                 // carousel start slide
+                    'scrollDelay'   : 6000               // auto scroll delay, < 500 = off >= 500 sets infinate true
+                });
+
+                $('.linear').carousel({ 
+                    'scrollDelay'   : 0,                 // endless carousel?
+                    'start'         : 4,
+                });
+
+            });
+        </script>
+        <style type="text/css">
+            article > div { 
+                overflow:hidden;
+                border:solid 1px #000;
+                margin:0 auto 30px;
+            }
+            article > h2 {
+                text-align: center;
+            }
+            ol, ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            .carousel ul{
+                overflow:hidden;
+                position:absolute;
+            }
+            .carousel li:nth-child(even) {
+                background-color: #ccc;
+            }
+            .carousel li h1 {
+                text-align: center;
+            }
+            .carouselNav {
+                overflow:hidden;
+            }
+            .carousel li,
+            .carouselNav li{
+                float:left;
+            }
+            .carouselNav{
+                margin:0 auto;
+            }
+            .active{
+                border:solid 1px red;
+            }
+            .carouselNav a {
+                background: none;
+                margin:0;
+                padding:5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>infinate jQurey Carousel</h1>
+        <article>
+            <h2>Endless Carousel - with auto scroll</h2>
+            <ul class="carousel endlessScroll">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <!-- li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+                <li><h1>Slide 9</h1></li>
+                <li><h1>Slide 10</h1></li -->
+            </ul>
+        </article>
+        <article>
+            <h2>Endless Carousel - with manual scroll</h2>
+            <ul class="carousel endless">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+            </ul>
+        </article>
+        <article>
+            <h2>Linear Carousel - with auto scroll (made endless)</h2>
+            <ul class="carousel linearScroll">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+            </ul>
+        </article>
+        <article>
+            <h2>Linear Carousel</h2>
+            <ul class="carousel linear">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+            </ul>
+        </article>
+    </body>
+</html>
