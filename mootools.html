@@ -2,14 +2,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-gb" xml:lang="en-gb">
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <script type="text/javascript" src="core.js"></script>
+        <script type="text/javascript" src="js/moo.1.4.5/core.js"></script>
         <script type="text/javascript">
 
             infinateCarousel = new Class({
                 Implements: [Events, Options],
                 Binds: [],
                 options: {
-                    carousel      : '.myCarousel',       // carousel ID
+                    carousel      : '.myCarousel',    // carousel ID
                     infinate      : false,            // endless carousel?
                     start         : 1,                // carousel start slide
                     scrollDelay   : 500,              // auto scroll delay, < 500 = off >= 500 sets infinate true
@@ -305,27 +305,27 @@
                  if ($$('endless')) {
 
                     endlessScroll = new infinateCarousel({
-                        carousel      : 'endless',       // carousel class
+                        carousel      : 'endless',              // carousel class
                         infinate      : true,                   // endless carousel?
                         start         : 2,                      // carousel start slide
-                        scrollDelay   : 0                    // auto scroll delay, < 500 = off >= 500 sets infinate true
+                        scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
                     })
                 }
                 
                 if ($$('linearScroll')) {
 
                     linear = new infinateCarousel({
-                        carousel      : 'linearScroll',              // carousel class
+                        carousel      : 'linearScroll',         // carousel class
                         infinate      : false,                  // endless carousel?
                         start         : 3,                      // carousel start slide
-                        scrollDelay   : 6000                       // auto scroll delay, < 500 = off >= 500 sets infinate true
+                        scrollDelay   : 6000                    // auto scroll delay, < 500 = off >= 500 sets infinate true
                     })
                 }
 
                 if ($$('linear')) {
 
                     linear = new infinateCarousel({
-                        carousel      : 'linear',              // carousel class
+                        carousel      : 'linear',               // carousel class
                         infinate      : false,                  // endless carousel?
                         start         : 4,                      // carousel start slide
                         scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
