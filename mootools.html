@@ -143,12 +143,14 @@
                     if(this.options.infinate) {
                         
                          if(this.options.infinate) {
-                            this.carousel.getChildren().each( function (el, i)  { 
+                            var myList = this.carousel.getChildren()
+                            myList.reverse().each( function (el, i)  { 
                                 el.clone(true, false).removeProperty('rel').addClass('clone').inject(this.carousel.get('id'), 'top');
+                            } .bind(this)) ;
+                            myList.each( function (el, i)  { 
                                 el.clone(true, false).removeProperty('rel').addClass('clone').inject(this.carousel.get('id'), 'bottom');
                             } .bind(this)) ;
                         }
-
                     }
                     this.carousel.setStyle('width', (this.carousel.getChildren().length * this.options.itemWidth));
 
@@ -189,7 +191,7 @@
                     }
                 },
 
-                  moveCarousel: function (activeSlide, navPosition) {
+                moveCarousel: function (activeSlide, navPosition) {
                     this.carousel.model.activeSlide = activeSlide;
                     this.carousel.model.navPosition = navPosition;
                     this.position();
