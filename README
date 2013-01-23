@@ -10,6 +10,12 @@ important before I just about got here, infinite carousels can be tricky
 especially if you can see more than one item through the porthole. So I 
 decided to take a look at how this can be achieved.
 
+A solution to the mootools issue has been offered on stackOverflow. its not 
+ideal but it makes the carousel work properly.
+
+http://stackoverflow.com/questions/14462433/mootools-clone-injecttop-reverses-the-element-order-order
+
+
 Features:
    Endless
    Auto Scroll
