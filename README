@@ -1,4 +1,4 @@
-Battle of the carousels mootools  v jQuery
+Battle of the carousels mootools v jQuery
 
 says simple on the tin...
 
@@ -7,7 +7,7 @@ the clone() process reversed the first part of the infinite carousel, this is
 probably easily fixable but for the time being this “fix” escapes me.
 The reason for building the same carousel in both moo and jQuery seemed rather 
 important before I just about got here, infinite carousels can be tricky 
-especially if you can see more than one item through the port hole. So I 
+especially if you can see more than one item through the porthole. So I 
 decided to take a look at how this can be achieved.
 
 Features:
