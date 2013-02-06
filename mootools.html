@@ -3,6 +3,145 @@
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <script type="text/javascript" src="js/moo.1.4.5/core.js"></script>
+
+        <script type="text/javascript">
+            window.addEvent('domready', function () {
+                
+                if ($$('endlessScroll')) {
+
+                    endlessScroll = new infinateCarousel({
+                        carousel      : 'endlessScroll',       // carousel class
+                        infinate      : true,                   // endless carousel?
+                        start         : 1,                      // carousel start slide
+                        scrollDelay   : 3000                    // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+
+                 if ($$('endless')) {
+
+                    endlessScroll = new infinateCarousel({
+                        carousel      : 'endless',              // carousel class
+                        infinate      : true,                   // endless carousel?
+                        start         : 2,                      // carousel start slide
+                        scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+                
+                if ($$('linearScroll')) {
+
+                    linear = new infinateCarousel({
+                        carousel      : 'linearScroll',         // carousel class
+                        infinate      : false,                  // endless carousel?
+                        start         : 3,                      // carousel start slide
+                        scrollDelay   : 6000                    // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+
+                if ($$('linear')) {
+
+                    linear = new infinateCarousel({
+                        carousel      : 'linear',               // carousel class
+                        infinate      : false,                  // endless carousel?
+                        start         : 4,                      // carousel start slide
+                        scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
+                    })
+                }
+            });
+        </script>
+        <style type="text/css">
+            article > div { 
+                overflow:hidden;
+                border:solid 1px #000;
+                margin:0 auto 30px;
+            }
+            article > h2 {
+                text-align: center;
+            }
+            ol, ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            .carousel ul{
+                overflow:hidden;
+                position:absolute;
+            }
+            .carousel li:nth-child(even) {
+                background-color: #ccc;
+            }
+            .carousel li h1 {
+                text-align: center;
+            }
+            .carouselNav {
+                overflow:hidden;
+            }
+            .carousel li,
+            .carouselNav li{
+                float:left;
+            }
+            .carouselNav{
+                margin:0 auto;
+            }
+            .active{
+                border:solid 1px red;
+            }
+            .carouselNav a {
+                background: none;
+                margin:0;
+                padding:5px;
+            }
+        </style>
+</head>
+<body>
+    <h1>infinate MooTools Carousel</h1>
+        <article>
+            <h2>Endless Carousel - with auto scroll</h2>
+            <ul class="carousel endlessScroll">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <!-- li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+                <li><h1>Slide 9</h1></li>
+                <li><h1>Slide 10</h1></li -->
+            </ul>
+        </article>
+        <article>
+            <h2>Endless Carousel - with manual scroll</h2>
+            <ul class="carousel endless">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+            </ul>
+        </article>
+        <article>
+            <h2>Linear Carousel - with auto scroll (made endless)</h2>
+            <ul class="carousel linearScroll">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+            </ul>
+        </article>
+        <article>
+            <h2>Linear Carousel</h2>
+            <ul class="carousel linear">
+                <li><h1>Slide 1</h1></li>
+                <li><h1>Slide 2</h1></li>
+                <li><h1>Slide 3</h1></li>
+                <li><h1>Slide 4</h1></li>
+                <li><h1>Slide 5</h1></li>
+                <li><h1>Slide 6</h1></li>
+                <li><h1>Slide 7</h1></li>
+                <li><h1>Slide 8</h1></li>
+            </ul>
+        </article>
         <script type="text/javascript">
 
             infinateCarousel = new Class({
@@ -290,144 +429,5 @@
                 
             });
         </script>
-
-        <script type="text/javascript">
-            window.addEvent('domready', function () {
-                
-                if ($$('endlessScroll')) {
-
-                    endlessScroll = new infinateCarousel({
-                        carousel      : 'endlessScroll',       // carousel class
-                        infinate      : true,                   // endless carousel?
-                        start         : 1,                      // carousel start slide
-                        scrollDelay   : 3000                    // auto scroll delay, < 500 = off >= 500 sets infinate true
-                    })
-                }
-
-                 if ($$('endless')) {
-
-                    endlessScroll = new infinateCarousel({
-                        carousel      : 'endless',              // carousel class
-                        infinate      : true,                   // endless carousel?
-                        start         : 2,                      // carousel start slide
-                        scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
-                    })
-                }
-                
-                if ($$('linearScroll')) {
-
-                    linear = new infinateCarousel({
-                        carousel      : 'linearScroll',         // carousel class
-                        infinate      : false,                  // endless carousel?
-                        start         : 3,                      // carousel start slide
-                        scrollDelay   : 6000                    // auto scroll delay, < 500 = off >= 500 sets infinate true
-                    })
-                }
-
-                if ($$('linear')) {
-
-                    linear = new infinateCarousel({
-                        carousel      : 'linear',               // carousel class
-                        infinate      : false,                  // endless carousel?
-                        start         : 4,                      // carousel start slide
-                        scrollDelay   : 0                       // auto scroll delay, < 500 = off >= 500 sets infinate true
-                    })
-                }
-            });
-        </script>
-        <style type="text/css">
-            article > div { 
-                overflow:hidden;
-                border:solid 1px #000;
-                margin:0 auto 30px;
-            }
-            article > h2 {
-                text-align: center;
-            }
-            ol, ul {
-                list-style: none;
-                margin: 0;
-                padding: 0;
-            }
-            .carousel ul{
-                overflow:hidden;
-                position:absolute;
-            }
-            .carousel li:nth-child(even) {
-                background-color: #ccc;
-            }
-            .carousel li h1 {
-                text-align: center;
-            }
-            .carouselNav {
-                overflow:hidden;
-            }
-            .carousel li,
-            .carouselNav li{
-                float:left;
-            }
-            .carouselNav{
-                margin:0 auto;
-            }
-            .active{
-                border:solid 1px red;
-            }
-            .carouselNav a {
-                background: none;
-                margin:0;
-                padding:5px;
-            }
-        </style>
-</head>
-<body>
-    <h1>infinate MooTools Carousel</h1>
-        <article>
-            <h2>Endless Carousel - with auto scroll</h2>
-            <ul class="carousel endlessScroll">
-                <li><h1>Slide 1</h1></li>
-                <li><h1>Slide 2</h1></li>
-                <li><h1>Slide 3</h1></li>
-                <li><h1>Slide 4</h1></li>
-                <!-- li><h1>Slide 5</h1></li>
-                <li><h1>Slide 6</h1></li>
-                <li><h1>Slide 7</h1></li>
-                <li><h1>Slide 8</h1></li>
-                <li><h1>Slide 9</h1></li>
-                <li><h1>Slide 10</h1></li -->
-            </ul>
-        </article>
-        <article>
-            <h2>Endless Carousel - with manual scroll</h2>
-            <ul class="carousel endless">
-                <li><h1>Slide 1</h1></li>
-                <li><h1>Slide 2</h1></li>
-                <li><h1>Slide 3</h1></li>
-                <li><h1>Slide 4</h1></li>
-                <li><h1>Slide 5</h1></li>
-                <li><h1>Slide 6</h1></li>
-            </ul>
-        </article>
-        <article>
-            <h2>Linear Carousel - with auto scroll (made endless)</h2>
-            <ul class="carousel linearScroll">
-                <li><h1>Slide 1</h1></li>
-                <li><h1>Slide 2</h1></li>
-                <li><h1>Slide 3</h1></li>
-                <li><h1>Slide 4</h1></li>
-            </ul>
-        </article>
-        <article>
-            <h2>Linear Carousel</h2>
-            <ul class="carousel linear">
-                <li><h1>Slide 1</h1></li>
-                <li><h1>Slide 2</h1></li>
-                <li><h1>Slide 3</h1></li>
-                <li><h1>Slide 4</h1></li>
-                <li><h1>Slide 5</h1></li>
-                <li><h1>Slide 6</h1></li>
-                <li><h1>Slide 7</h1></li>
-                <li><h1>Slide 8</h1></li>
-            </ul>
-        </article>
 </body>
 </html>
